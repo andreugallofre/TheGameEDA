@@ -33,9 +33,22 @@
     typedef vector<VI>  VVI;
 
     typedef vector<char> VC;
-    typedef vector<VC>  VVC;
+    typedef vector<VC> VVC;
 
     typedef vector<structure> VS;
+
+    struct point {
+        int x, y, xa, ya;
+    };
+
+    point create_point(int x, int y, int xa, int ya) {
+        point p;
+        p.x = x;
+        p.y = y;
+        p.xa = xa;
+        p.ya = ya;
+        return p;
+    }
 
     // Stores the location of orks.
     VVI ork_at;
@@ -43,9 +56,15 @@
     map<int, pair<int,int>> position_id_orks;
 
     VVC matrix;
+    VVC m2;
 
     VS cities;
-    VS paths;    
+    VS paths; 
+
+    vector<point> cami;   
+    vector<point> cami2; 
+
+    stack<string> moviments;
 
     // Moves ork with identifier id.
     void move(int id) {
@@ -85,7 +104,24 @@
     }
 
     // BFS, Get the nearest path/city form the position of the ork and it's path
-
+    void bfs_ite(VVC& G, vector<point>& v, point& b) {
+        int i = 0;
+        while (true) {
+            cerr << "iteration " << i << endl;
+            point p = v[i];
+            if (G[p.x][p.y] == '#') {
+                b = p;
+                return;
+            } else if (G[p.x][p.y] == 'G' or G[p.x][p.y] == 'F' or G[p.x][p.y] == 'S' or G[p.x][p.y] == '*') {
+                if (G[p.x-1][p.y] != 'X') v.push_back(create_point(p.x-1, p.y, p.x, p.y));
+                if (G[p.x+1][p.y] != 'X') v.push_back(create_point(p.x+1, p.y, p.x, p.y));
+                if (G[p.x][p.y-1] != 'X') v.push_back(create_point(p.x, p.y-1, p.x, p.y));
+                if (G[p.x][p.y+1] != 'X') v.push_back(create_point(p.x, p.y+1, p.x, p.y));
+                G[p.x][p.y] = 'X';
+            }
+            ++i;
+        }
+    }
 
     /**
     * Play method, invoked once per each round.
@@ -93,7 +129,6 @@
     virtual void play () {
 
         matrix = VVC(rows(), VC(cols()));
-
 
         if (round() == 0){
             generate_matrix();
@@ -110,9 +145,44 @@
             //     cerr << "Ork id = " << it->first << " Pos i = " << it->second.first << " pos j = " << it->second.second << endl;
 
             // Generate a path for every ork to it's near city, move it, and 
-            // for (auto it=position_id_orks.begin(); it != position_id_orks.end(); it++)
-            //     q = generateBFS(id, starting_i, starting_j);
+            auto it=position_id_orks.begin();
 
+            for (int i = 0; i < 1; ++i){
+                m2 = matrix;
+                point inici = create_point(it->second.first,it->second.second,0,0);
+                cami.push_back(inici);
+                point l = inici;
+
+                cerr << "ok" << endl;
+
+                bfs_ite(m2, cami, inici);
+
+                cerr << "ok" << endl;
+                
+                for (int i= cami.size(); i>=0; --i) {
+                    cerr << cami[i].x << " " << cami[i].y << endl;
+                    if (cami[i].x == l.xa and cami[i].y == l.ya) {
+                    l = cami[i];
+                    cami2.push_back(l);
+                    }
+                }
+
+                
+
+                for (int i = 1; i < (int)cami2.size()-1; ++i) {
+                    cerr << cami2[i].x << cami[i].y << endl;
+                    if (cami2[i].x == cami2[i-1].x-1) moviments.push("TOP");
+                    else if (cami2[i].x == cami2[i-1].x+1) moviments.push("BOTTOM");
+                    else if (cami2[i].y == cami2[i-1].y-1) moviments.push("LEFT");
+                    else if (cami2[i].x == cami2[i-1].y+1) moviments.push("RIGHT");
+                }    
+
+                while(!moviments.empty()){
+                    string s = moviments.top(); moviments.pop();
+                    cerr << s << endl;
+                }
+
+            }
         } 
 
     
