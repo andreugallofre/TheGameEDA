@@ -76,12 +76,33 @@
         for (int i = 1; i < matrix[0].size()-1; ++i){
             for (int j = 1; j < matrix.size()-1; ++j) {
                 Cell c = cell(i-1, j-1);
-                if (c.type == CITY) matrix[i][j] = '#';
-                else if (c.type == PATH) matrix[i][j] = '#';
+                if (c.type == CITY) matrix[i][j] = 'B';
+                else if (c.type == PATH) matrix[i][j] = 'B';
                 else if (c.type == WATER) matrix[i][j] = 'X';
-                else if (c.type == GRASS) matrix[i][j] = 'G';
-                else if (c.type == FOREST) matrix[i][j] = 'F';
-                else if (c.type == SAND) matrix[i][j] = 'S';
+                else if (c.type == GRASS) matrix[i][j] = '.';
+                else if (c.type == FOREST) matrix[i][j] = '.';
+                else if (c.type == SAND) matrix[i][j] = '.';
+            } 
+        }
+    }
+   
+       void generate_matrix_2(VVC &matrix){
+
+        for (int i = 1; i < matrix[0].size()-1; ++i){
+            for (int j = 1; j < matrix.size()-1; ++j) {
+                Cell c = cell(i-1, j-1);
+                if (c.type == CITY){
+                  if (checkIfImCityOwner(i-1,j-1)) matrix[i][j] = '.';
+                  else matrix[i][j] = 'B';
+                } 
+                else if (c.type == PATH){
+                  if (checkIfImPathOwner(i-1,j-1)) matrix[i][j] = '.';
+                  else matrix[i][j] = 'B';
+                } 
+                else if (c.type == WATER) matrix[i][j] = 'X';
+                else if (c.type == GRASS) matrix[i][j] = '.';
+                else if (c.type == FOREST) matrix[i][j] = '.';
+                else if (c.type == SAND) matrix[i][j] = '.';
             } 
         }
     }
@@ -97,7 +118,7 @@
 
     }
 
-    int generateMove(stack<point>& cami) {
+    int generateMove(stack<point>& cami, point p) {
 
         if (!cami.empty()){
             point p1 = cami.top();
@@ -106,10 +127,10 @@
             if (!cami.empty()){
                 point p2 = cami.top();
                 cerr << "test get move" << endl;
-                if (p2.x == p1.x and p2.y-1 == p1.y) return RIGHT;
-                if (p2.x == p1.x and p2.y+1 == p1.y) return LEFT;
-                if (p2.x == p1.x-1 and p2.y == p1.y) return TOP;
-                if (p2.x == p1.x+1 and p2.y == p1.y) return BOTTOM;
+                if (p2.x == p.x and p2.y-1 == p.y) return RIGHT;
+                if (p2.x == p.x and p2.y+1 == p.y) return LEFT;
+                if (p2.x == p.x-1 and p2.y == p.y) return TOP;
+                if (p2.x == p.x+1 and p2.y == p.y) return BOTTOM;
             }
         }
 
@@ -125,11 +146,25 @@
         return p;
     }
 
-    bool checkIfImOwner(int i, int j){
+    bool checkIfImCityOwner(int i, int j){
         Cell c = cell(i, j);
         int z = c.city_id;
-        if (z == -1) return false;
-        return city_owner(z) == me();
+        if (z != -1){
+          if (city_owner(z) == -1) return false;
+          else if (city_owner(z) == me()) return true;
+          else return false;
+        }
+      return false;
+    }
+    bool checkIfImPathOwner(int i, int j){
+        Cell c = cell(i, j);
+        int z = c.path_id;
+        if (z != -1){
+          if (path_owner(z) == -1) return false;
+          else if (path_owner(z) == me()) return true;
+          else return false;
+        }
+      return false;
     }
 
     void bfs_ite(VVC& G, vector<point>& v, point& b) {
@@ -139,16 +174,16 @@
        
             point p = v[i];
 
-            cerr << p.x << " " << p.y << " " << i << endl;
+            //cerr << p.x << " " << p.y << " " << i << endl;
 
-            if (G[p.x][p.y] == '#') {
-                if (!checkIfImOwner(p.x-1,p.y-1)){
+            if (G[p.x][p.y] == 'B') {
                     b = p;
                     v.push_back(b);
                     return;
-                }
-            } else if (G[p.x][p.y] == 'G' or G[p.x][p.y] == 'F' or G[p.x][p.y] == 'S' or G[p.x][p.y] == '#') {
-                cerr << p.x << " " << p.y << " " << i << endl;
+            }else if (p.x == 0 or p.y == 0) {
+              return;
+            }else if (G[p.x][p.y] == '.') {
+                //cerr << p.x << " " << p.y << " " << i << endl;
                 if (G[p.x-1][p.y] != 'X') v.push_back(create_point(p.x-1, p.y, p.x, p.y));
                 if (G[p.x+1][p.y] != 'X') v.push_back(create_point(p.x+1, p.y, p.x, p.y));
                 if (G[p.x][p.y-1] != 'X') v.push_back(create_point(p.x, p.y-1, p.x, p.y));
@@ -158,7 +193,8 @@
             ++i;
         }
     }
-
+  
+    
 
 
     //Cell cell (int i, int j)
@@ -201,6 +237,9 @@
         for (int i = 0; i < my_orks.size(); ++i) {
 
             m2 = matrix;
+            generate_matrix_2(m2);
+
+            
             stack<point> cami;   
             vector<point> v;
 
@@ -221,7 +260,7 @@
             cami.push(b);
             getPath(b,v,cami);
             cerr << "end get path" << endl;
-            int mov = generateMove(cami);
+            int mov = generateMove(cami, p);
             cerr << "end mov" << endl;
 
             Dir dir = Dir(mov);
